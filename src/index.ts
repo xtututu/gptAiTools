@@ -14,14 +14,18 @@ basekit.addField({
   i18n: {
     messages: {
       'zh-CN': {
+        'modelSelection': '选择模型',
         'inputCommand': '输入指令',
         'outputResult': '输出结果',
+
       },
       'en-US': {
+        'modelSelection': 'Model selection',
         'inputCommand': 'Input command',
         'outputResult': 'Output result',
       },
       'ja-JP': {
+        'modelSelection': 'モデル選択',
         'inputCommand': '入力コマンド',
         'outputResult': '出力結果',
       },
@@ -43,6 +47,21 @@ basekit.addField({
   ],
   // 定义捷径的入参
   formItems: [ 
+    {
+      key: 'modelSelection',
+      label: t('modelSelection'),
+      component: FieldComponent.SingleSelect,
+      defaultValue: { label: 'gpt-5', value: 'gpt-5'},
+      props: {
+        options: [
+          { label: 'gpt-5', value: 'gpt-5'},
+          { label: 'gpt-5-mini', value: 'gpt-5-mini'},
+          { label: 'gpt-5-thinking', value: 'gpt-5-thinking'},
+          { label: 'gpt-5-nano', value: 'gpt-5-nano'},
+          { label: 'gpt-4o-mini', value: 'gpt-4o-mini'},
+        ]
+      },
+    },
     {
       key: 'inputCommand',
       label: t('inputCommand'),
@@ -77,18 +96,13 @@ basekit.addField({
           title: t('outputResult'),
           primary:true
         },
-        // {
-        //   key: 'outputResult',
-        //   type: FieldType.Text,
-        //   title: t('outputResult'),
-        //   primary:true
-        // }
+       
       ],
     },
   },
   // 执行函数
   execute: async (formItemParams, context) => {
-    const { inputCommand } = formItemParams;
+    const { inputCommand,modelSelection } = formItemParams;
     const { fetch } = context;
 
      function debugLog(arg: any) {
@@ -106,7 +120,7 @@ basekit.addField({
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'gpt-5',
+                    model: modelSelection.value,
                    "messages": [
                               {
                                 "role": "developer",
