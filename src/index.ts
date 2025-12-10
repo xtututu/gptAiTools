@@ -17,18 +17,20 @@ basekit.addField({
         'modelSelection': '选择模型',
         'inputCommand': '输入指令',
         'outputResult': '输出结果',
-
+        'refAtt': '参考附件',
       },
-      'en-US': {
+       'en-US': {
         'modelSelection': 'Model selection',
         'inputCommand': 'Input command',
         'outputResult': 'Output result',
-      },
+        'refAtt': 'Reference attachment',
+      }, 
       'ja-JP': {
         'modelSelection': 'モデル選択',
         'inputCommand': '入力コマンド',
         'outputResult': '出力結果',
-      },
+        'refAtt': '参考附件',
+      }
     }
   },
    authorizations: [
@@ -55,6 +57,7 @@ basekit.addField({
       props: {
         options: [
           { label: 'gpt-5', value: 'gpt-5'},
+          { label: 'gpt-5.1', value: 'gpt-5.1'},
           { label: 'gpt-5-mini', value: 'gpt-5-mini'},
           { label: 'gpt-5-thinking', value: 'gpt-5-thinking'},
           { label: 'gpt-5-nano', value: 'gpt-5-nano'},
@@ -72,105 +75,135 @@ basekit.addField({
       validator: {
         required: true,
       }
+    },
+    {
+      key: 'refAtt',
+      label: t('refAtt'),
+      component: FieldComponent.FieldSelect,
+      props: {
+        supportType: [FieldType.Attachment],
+      }
     }
     
   ],
   // 定义返回结果类型为文本
  resultType: {
-    type: FieldType.Object,
-    extra: {
-      icon: {
-        light: 'https://lf3-static.bytednsdoc.com/obj/eden-cn/eqgeh7upeubqnulog/chatbot.svg',
-      },
-      properties: [
-        {
-          key: 'id',
-          isGroupByKey: true,// 要有个isGroupByKey
-          type: FieldType.Text,
-          title: 'id',
-          hidden: true
-        },
-        {
-          key: 'outRes',
-          type: FieldType.Text,
-          title: t('outputResult'),
-          primary:true
-        },
-       
-      ],
-    },
+    type: FieldType.Text,// 定义捷径的返回结果类型为多行文本字段
   },
   // 执行函数
   execute: async (formItemParams, context) => {
-    const { inputCommand,modelSelection } = formItemParams;
+    const { inputCommand, modelSelection, refAtt } = formItemParams;
     const { fetch } = context;
 
-     function debugLog(arg: any) {
+    // 调试日志函数
+    function debugLog(arg: any) {
       // @ts-ignore
       console.log(JSON.stringify({
         timestamp: new Date().toISOString(),
         ...arg
-      }))
+      }));
     }
 
     try {
-      const createVideoUrl = `http://api.xunkecloud.cn/v1/chat/completions`;
-            // 打印API调用参数信息
-            const requestOptions = {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: modelSelection.value,
-                   "messages": [
-                              {
-                                "role": "developer",
-                                "content": "你是一个有帮助的助手。"
-                              },
-                              {
-                                "role": "user",
-                                "content": inputCommand
-                              }
-                            ]
-                })
-            };
-            const taskResp = await context.fetch(createVideoUrl, requestOptions, 'auth_id_1');
+      // API请求地址
+      const apiUrl = 'http://api.xunkecloud.cn/plus/v1/chat/completions';
+      console.log(refAtt);
+      
+      
+      // 发送文件上传请求（如果有文件）
+      let fileUrl = '';
+      if (refAtt && refAtt[0] && refAtt[0].tmp_url) {
+        const uploadUrl = 'https://api.xunkecloud.cn/api/file/upload';
+        const uploadOptions = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file_url: refAtt[0].tmp_url
+          })
+        };
+        
+        const uploadResponse = await context.fetch(uploadUrl, uploadOptions, 'auth_id_1');
+        const uploadResult = await uploadResponse.json();
 
+        console.log('文件上传结果:', uploadResult);
+        
+        
+        if (uploadResult.success && uploadResult.file_url) {
+          fileUrl = `https://api.xunkecloud.cn${uploadResult.file_url}`;
+        }
+      }
 
-          const initialResult = await taskResp.json();      
-           
-          // 检查是否有错误
-          if (initialResult.error) {
-            debugLog({
-              type: 'error',
-              message: initialResult.error.message,
-              code: initialResult.error.code,
-              errorType: initialResult.error.type
-            });
-            
-            return {
-              code: FieldCode.Success,
-              data: {
-                id: '-',
-                outRes: `错误: ${initialResult.error.message}`
-              },
-              msg: initialResult.error.message
-            };
-          }
-      let aiResult = initialResult.choices[0].message.content;
+      // 构建请求消息
+      const messages = [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: inputCommand
+            },
+            // 添加附件URL（如果存在）
+            ...(fileUrl ? [
+              {
+                type: 'file_url',
+                file_url: {
+                  url: fileUrl
+                }
+              }
+            ] : [])
+          ]
+        }
+      ];
+      
+      // 构建请求配置
+      const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: modelSelection.value,
+          messages
+        })
+      };
+
+      console.log('requestOptions:', requestOptions);
+      
+      // 发送API请求
+      const response = await context.fetch(apiUrl, requestOptions, 'auth_id_1');
+      const result = await response.json();
+      
+      console.log(result.choices[0].message.content);
+      
+      // 检查错误
+      if (result.error) {
+        debugLog({
+          type: 'error',
+          message: result.error.message,
+          code: result.error.code,
+          errorType: result.error.type
+        });
+        
+        return {
+          code: FieldCode.Success,
+          data: {
+            id: '-',
+            outRes: `错误: ${result.error.message}`
+          },
+          msg: result.error.message
+        };
+      }
+      
+      // 返回结果
+      const aiResult = result.choices[0].message.content;
       return {
         code: FieldCode.Success,
-        data: {// 这里的属性与resultType中的结构对应
-          id: '-',
-          outRes: aiResult,
-          // number: 0,
-        },
+        data: aiResult
       };
     } catch (error) {
-      console.log("🚀 ~ execute: ~ 整体执行错误:", error);
+      console.error('执行错误:', error);
       return {
         code: FieldCode.Success,
-        data: "AI服务异常，请稍后重试～",
-        msg: "服务异常！"
+        data: 'AI服务异常，请稍后重试～',
+        msg: '服务异常！'
       };
     }
   },
