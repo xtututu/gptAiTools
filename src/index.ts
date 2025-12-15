@@ -18,18 +18,23 @@ basekit.addField({
         'inputCommand': '输入指令',
         'outputResult': '输出结果',
         'refAtt': '参考附件',
+        'modelBrand':'迅客'
       },
        'en-US': {
         'modelSelection': 'Model selection',
         'inputCommand': 'Input command',
         'outputResult': 'Output result',
         'refAtt': 'Reference attachment',
+        'modelBrand':'Xunke'
+
       }, 
       'ja-JP': {
         'modelSelection': 'モデル選択',
         'inputCommand': '入力コマンド',
         'outputResult': '出力結果',
         'refAtt': '参考附件',
+        'modelBrand':'Xunke'
+
       }
     }
   },
@@ -53,15 +58,19 @@ basekit.addField({
       key: 'modelSelection',
       label: t('modelSelection'),
       component: FieldComponent.SingleSelect,
-      defaultValue: { label: 'gpt-5', value: 'gpt-5'},
+      defaultValue: { label: t('modelBrand') + ' GT-5', value: 'gpt-5'},
       props: {
         options: [
-          { label: 'gpt-5', value: 'gpt-5'},
-          { label: 'gpt-5.1', value: 'gpt-5.1'},
-          { label: 'gpt-5-mini', value: 'gpt-5-mini'},
-          { label: 'gpt-5-thinking', value: 'gpt-5-thinking'},
-          { label: 'gpt-5-nano', value: 'gpt-5-nano'},
-          { label: 'gpt-4o-mini', value: 'gpt-4o-mini'},
+          // 对话模型 - Gemini 系列
+          { label:  t('modelBrand') + ' GM-2.5-pro', value: 'gemini-2.5-pro'},
+          { label:  t('modelBrand') + ' GM-3-pro', value: 'gemini-3-pro-preview'},
+          { label:  t('modelBrand') + ' GT-5', value: 'gpt-5'},
+          { label:  t('modelBrand') + ' GT-5.1', value: 'gpt-5.1'},
+          { label:  t('modelBrand') + ' GT-5.2', value: 'gpt-5.2'},
+          { label:  t('modelBrand') + ' GT-5-mini', value: 'gpt-5-mini'},
+          { label:  t('modelBrand') + ' GT-5-thinking', value: 'gpt-5-thinking'},
+          { label:  t('modelBrand') + ' GT-5-nano', value: 'gpt-5-nano'},
+          { label:  t('modelBrand') + ' GT-4o-mini', value: 'gpt-4o-mini'},
         ]
       },
     },
@@ -165,16 +174,16 @@ basekit.addField({
         })
       };
 
-      console.log('requestOptions:', requestOptions);
       
       // 发送API请求
       const response = await context.fetch(apiUrl, requestOptions, 'auth_id_1');
       const result = await response.json();
       
-      console.log(result.choices[0].message.content);
+      // console.log(result.choices[0].message.content);
       
       // 检查错误
       if (result.error) {
+        
         debugLog({
           type: 'error',
           message: result.error.message,
@@ -184,10 +193,7 @@ basekit.addField({
         
         return {
           code: FieldCode.Success,
-          data: {
-            id: '-',
-            outRes: `错误: ${result.error.message}`
-          },
+          data: `错误: ${result.error.message}`+'访问查阅处理方式：https://api.xunkecloud.cn/about',
           msg: result.error.message
         };
       }
