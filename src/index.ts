@@ -63,7 +63,7 @@ basekit.addField({
         options: [
           // 对话模型 - Gemini 系列
           { label:  t('modelBrand') + ' GM-2.5-pro', value: 'gemini-2.5-pro'},
-          { label:  t('modelBrand') + ' GM-3-pro', value: 'gemini-3-pro-preview'},
+          { label:  t('modelBrand') + ' GM-3-pro', value: 'gemini-3-pro'},
           { label:  t('modelBrand') + ' GT-5', value: 'gpt-5'},
           { label:  t('modelBrand') + ' GT-5.1', value: 'gpt-5.1'},
           { label:  t('modelBrand') + ' GT-5.2', value: 'gpt-5.2'},
@@ -115,7 +115,7 @@ basekit.addField({
 
     try {
       // API请求地址
-      const apiUrl = 'http://api.xunkecloud.cn/plus/v1/chat/completions';
+      const apiUrl = 'https://api.xunkecloud.cn/plus/v1/chat/completions';
       console.log(refAtt);
       
       
@@ -163,6 +163,9 @@ basekit.addField({
           ]
         }
       ];
+
+      
+      
       
       // 构建请求配置
       const requestOptions = {
@@ -173,11 +176,15 @@ basekit.addField({
           messages
         })
       };
+console.log(requestOptions);
 
       
       // 发送API请求
       const response = await context.fetch(apiUrl, requestOptions, 'auth_id_1');
       const result = await response.json();
+      console.log(
+        'API响应:', result
+      );
       
       // console.log(result.choices[0].message.content);
       
@@ -198,8 +205,11 @@ basekit.addField({
         };
       }
       
+      
       // 返回结果
       const aiResult = result.choices[0].message.content;
+      console.log(aiResult);
+      
       return {
         code: FieldCode.Success,
         data: aiResult
